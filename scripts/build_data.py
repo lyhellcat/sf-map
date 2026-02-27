@@ -695,6 +695,12 @@ def main() -> None:
     parser.add_argument("--refresh-source", action="store_true", help="Re-download source HTML pages.")
     parser.add_argument("--skip-official-api", action="store_true", help="Skip calling SF official API.")
     parser.add_argument("--api-timeout", type=int, default=20, help="Timeout (seconds) for SF official API call.")
+    parser.add_argument(
+        "--min-official-rows",
+        type=int,
+        default=0,
+        help="Fail if official API rows by code are below this threshold.",
+    )
     args = parser.parse_args()
 
     zh_html = load_source_html(SOURCE_URL_ZH, SOURCE_HTML_ZH, refresh=args.refresh_source, required=True)
@@ -709,6 +715,11 @@ def main() -> None:
 
     official_map = fetch_official_store_map(timeout=max(args.api_timeout, 5), skip_official_api=args.skip_official_api)
     print(f"Official API rows by code: {len(official_map)}")
+    if args.min_official_rows > 0 and len(official_map) < args.min_official_rows:
+        raise SystemExit(
+            f"Official API rows too low: {len(official_map)} < {args.min_official_rows}. "
+            "Abort to avoid publishing degraded data."
+        )
 
     rows, fallback_rows, en_fallback_count = build_rows(stores, english_map, official_map)
     print(f"Rows with fallback coordinates: {len(fallback_rows)}")

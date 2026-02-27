@@ -39,6 +39,11 @@ python3 -m http.server 8000
 
 浏览器打开：`http://localhost:8000`
 
+## GitHub 定时更新
+
+仓库内已包含工作流：`.github/workflows/update-data.yml`  
+会按计划在 GitHub 上定时执行 `scripts/build_data.py`，有数据变化就自动提交到 `main`，并触发 Pages 重新部署。
+
 ## 说明
 
 - 地图底图使用 OpenStreetMap，无需付费 API Key。
