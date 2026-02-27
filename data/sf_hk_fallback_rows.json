@@ -1,0 +1,21 @@
+[
+  {
+    "district": "赤鱲角",
+    "district_en": "Chek Lap Kok",
+    "code": "852QB",
+    "name": "赤鱲角机场顺丰站",
+    "name_en": "Chek Lap Kok Airport SF Service Point",
+    "address": "赤鱲角机场顺丰站",
+    "address_en": "Counter 1-2, Area J, L7, Terminal 1, Hong Kong International Airport, Chek Lap Kok, Lantau Island, New Territories, Hong Kong",
+    "hours_weekday": "08:00-21:00",
+    "hours_sat": "08:00-21:00",
+    "hours_sun_holiday": "08:00-21:00",
+    "hours_weekday_en": "08:00-21:00",
+    "hours_sat_en": "08:00-21:00",
+    "hours_sun_holiday_en": "08:00-21:00",
+    "lat": 22.312479999999997,
+    "lon": 114.17003,
+    "coord_source": "district_fallback",
+    "council": null
+  }
+]

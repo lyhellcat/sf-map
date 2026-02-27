@@ -1,0 +1,4 @@
+.DS_Store
+__pycache__/
+*.pyc
+data/sf_hk_store_official_raw.json

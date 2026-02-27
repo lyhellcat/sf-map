@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>顺丰香港网点地图（本地版）</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      :root {
+        --bg: #f2f7f5;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --brand: #0ea5a4;
+        --accent: #fb923c;
+        --line: #dbe4e1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: "Noto Sans HK", sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at 20% 0%, #e8f8f4 0%, var(--bg) 42%);
+      }
+
+      .page {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        height: 100%;
+      }
+
+      .topbar {
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(120deg, #ffffff 0%, #ecfffb 100%);
+      }
+
+      .title {
+        margin: 0;
+        font-size: 20px;
+      }
+
+      .sub {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .stats {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #083344;
+        color: #ecfeff;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 330px 1fr;
+        min-height: 0;
+      }
+
+      .panel {
+        border-right: 1px solid var(--line);
+        background: var(--card);
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        min-height: 0;
+      }
+
+      .controls {
+        padding: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .search {
+        width: 100%;
+        border: 1px solid #b6cac4;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 14px;
+      }
+
+      .hint {
+        margin: 8px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .list-head {
+        padding: 10px 14px;
+        font-size: 13px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .list {
+        overflow: auto;
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .item {
+        border: 1px solid #d7e5e0;
+        border-radius: 10px;
+        padding: 10px;
+        background: #ffffff;
+        cursor: pointer;
+        transition: transform 120ms ease, border-color 120ms ease;
+      }
+
+      .item:hover {
+        transform: translateY(-1px);
+        border-color: var(--brand);
+      }
+
+      .item.active {
+        border-color: var(--accent);
+        background: #fff7ed;
+      }
+
+      .name {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .meta,
+      .addr {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .addr-en {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #334155;
+      }
+
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+          grid-template-rows: 45% 55%;
+        }
+
+        .panel {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div>
+          <h1 class="title">顺丰香港网点地图（本地免费版）</h1>
+          <p class="sub">数据来源：顺丰香港官网网点地址页，底图：OpenStreetMap</p>
+        </div>
+        <div class="stats" id="stats">加载中...</div>
+      </header>
+
+      <div class="layout">
+        <aside class="panel">
+          <div class="controls">
+            <input id="search" class="search" placeholder="搜索：点码 / 名称 / 地区 / 地址" />
+            <p class="hint">示例：`852M`、`将军澳`、`东荟城`</p>
+          </div>
+          <div class="list-head" id="listHead">网点列表</div>
+          <div class="list" id="list"></div>
+        </aside>
+        <main id="map"></main>
+      </div>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script>
+      const hkCenter = [22.3193, 114.1694];
+      const map = L.map("map", { zoomControl: true }).setView(hkCenter, 11);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      const statsEl = document.getElementById("stats");
+      const listEl = document.getElementById("list");
+      const listHeadEl = document.getElementById("listHead");
+      const searchEl = document.getElementById("search");
+
+      let allItems = [];
+      let visibleItems = [];
+      let activeCode = null;
+
+      function popupHtml(properties) {
+        const name = properties.name || "";
+        const nameEn = properties.name_en || "";
+        const code = properties.code || "";
+        const district = properties.district || "";
+        const address = properties.address || "";
+        const addressEn = properties.address_en || "";
+        const districtEn = properties.district_en || "";
+        const hWd = properties.hours_weekday || "";
+        const hSat = properties.hours_sat || "";
+        const hSun = properties.hours_sun_holiday || "";
+        return `
+          <div style="min-width:240px;line-height:1.45;">
+            <div style="font-size:15px;font-weight:700;margin-bottom:6px;">${name}</div>
+            ${nameEn ? `<div style="color:#475569;margin-bottom:6px;">${nameEn}</div>` : ""}
+            <div><strong>点码:</strong> ${code}</div>
+            <div><strong>地区:</strong> ${district}${districtEn ? ` / ${districtEn}` : ""}</div>
+            <div style="margin-top:6px;"><strong>地址(中):</strong><br/>${address}</div>
+            <div style="margin-top:6px;"><strong>Address (EN):</strong><br/>${addressEn}</div>
+            <div style="margin-top:8px;"><strong>营业时间:</strong></div>
+            <div>周一至五: ${hWd || "-"}</div>
+            <div>周六: ${hSat || "-"}</div>
+            <div>周日/假期: ${hSun || "-"}</div>
+          </div>
+        `;
+      }
+
+      function setActive(code) {
+        activeCode = code;
+        for (const node of listEl.querySelectorAll(".item")) {
+          node.classList.toggle("active", node.dataset.code === code);
+        }
+      }
+
+      function focusStore(code, shouldOpenPopup = true) {
+        const item = allItems.find((x) => x.code === code);
+        if (!item) return;
+        setActive(code);
+        map.flyTo(item.latlng, 16, { duration: 0.45 });
+        if (shouldOpenPopup) {
+          item.marker.openPopup();
+        }
+      }
+
+      function renderList(items) {
+        listEl.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+        items.forEach((item) => {
+          const div = document.createElement("button");
+          div.type = "button";
+          div.className = "item";
+          div.dataset.code = item.code;
+          div.innerHTML = `
+            <p class="name">${item.name}</p>
+            <p class="meta">${item.code} · ${item.district}</p>
+            <p class="addr">${item.address}</p>
+            <p class="addr-en">${item.addressEn}</p>
+          `;
+          div.addEventListener("click", () => focusStore(item.code, true));
+          fragment.appendChild(div);
+        });
+        listEl.appendChild(fragment);
+        if (activeCode) {
+          setActive(activeCode);
+        }
+      }
+
+      function updateVisibleMarkers(items) {
+        visibleItems.forEach((item) => map.removeLayer(item.marker));
+        visibleItems = items;
+        visibleItems.forEach((item) => map.addLayer(item.marker));
+      }
+
+      function applyFilter() {
+        const q = searchEl.value.trim().toLowerCase();
+        const filtered = q
+          ? allItems.filter((item) => item.searchText.includes(q))
+          : allItems;
+
+        listHeadEl.textContent = `网点列表（${filtered.length}/${allItems.length}）`;
+        updateVisibleMarkers(filtered);
+        renderList(filtered);
+      }
+
+      async function bootstrap() {
+        const res = await fetch("data/sf_hk_stores.geojson", { cache: "no-store" });
+        if (!res.ok) throw new Error("加载 GeoJSON 失败");
+        const geojson = await res.json();
+
+        allItems = geojson.features.map((feature) => {
+          const p = feature.properties;
+          const latlng = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+
+          const marker = L.circleMarker(latlng, {
+            radius: 6,
+            weight: 1,
+            color: "#0f172a",
+            fillColor: "#0ea5a4",
+            fillOpacity: 0.85,
+          }).bindPopup(popupHtml(p));
+
+          marker.on("click", () => {
+            setActive(p.code);
+          });
+
+          return {
+            code: p.code,
+            name: p.name,
+            nameEn: p.name_en || "",
+            district: p.district,
+            districtEn: p.district_en || "",
+            address: p.address,
+            addressEn: p.address_en || "",
+            hoursWeekday: p.hours_weekday || "",
+            hoursSat: p.hours_sat || "",
+            hoursSunHoliday: p.hours_sun_holiday || "",
+            latlng,
+            marker,
+            searchText: `${p.code} ${p.name} ${p.name_en || ""} ${p.district} ${p.district_en || ""} ${p.address} ${p.address_en || ""} ${p.hours_weekday || ""} ${p.hours_sat || ""} ${p.hours_sun_holiday || ""}`.toLowerCase(),
+          };
+        });
+
+        statsEl.textContent = `可显示网点 ${allItems.length} 个`;
+        updateVisibleMarkers(allItems);
+        renderList(allItems);
+
+        if (allItems.length) {
+          const group = L.featureGroup(allItems.map((x) => x.marker));
+          map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        searchEl.addEventListener("input", applyFilter);
+      }
+
+      bootstrap().catch((err) => {
+        console.error(err);
+        statsEl.textContent = "加载失败";
+        listHeadEl.textContent = "请先运行数据构建脚本";
+      });
+    </script>
+  </body>
+</html>
