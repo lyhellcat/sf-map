@@ -7,10 +7,16 @@
 - 若网络不可用，自动回退为“按行政区中心 + 固定偏移”的离线近似坐标
 - 用 Leaflet + OpenStreetMap 在地图上展示
 
+## 快速开始
+
+```bash
+git clone git@github.com:lyhellcat/sf-map.git
+cd sf-map
+```
+
 ## 1) 构建数据
 
 ```bash
-cd /Users/bytedance/Downloads/sf-hk-map
 python3 scripts/build_data.py
 ```
 
@@ -33,7 +39,6 @@ python3 scripts/build_data.py --skip-official-api
 ## 2) 启动本地网页
 
 ```bash
-cd /Users/bytedance/Downloads/sf-hk-map
 python3 -m http.server 8000
 ```
 
